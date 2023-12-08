@@ -1,0 +1,41 @@
+import asyncio
+
+import aio_pika
+
+from fastapi_rabbitmq.constants import ROUTING_KEY, RABBITMQ_URL
+from fastapi_rabbitmq.messages import Task
+
+
+async def main(task: Task) -> None:
+    connection = await aio_pika.connect_robust(
+        RABBITMQ_URL,
+    )
+
+    async with connection:
+        routing_key = ROUTING_KEY
+
+        channel = await connection.channel()
+
+        await channel.default_exchange.publish(
+            aio_pika.Message(body=task.model_dump_json().encode("utf-8")),
+            routing_key=routing_key,
+        )
+
+
+def send(task: Task):
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:  # 'RuntimeError: There is no current event loop...'
+        loop = None
+
+    if loop and loop.is_running():
+        print('Async event loop already running. Adding coroutine to the event loop.')
+        tsk = loop.create_task(main(task))
+        # ^-- https://docs.python.org/3/library/asyncio-task.html#task-object
+        # Optionally, a callback function can be executed when the coroutine completes
+        tsk.add_done_callback(
+            lambda t: print(f'Task done with result={t.result()}  << return val of main()'))
+    else:
+        print('Starting new event loop')
+        result = asyncio.run(main())
+    # asyncio.run(main(task))
