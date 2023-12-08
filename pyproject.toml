@@ -25,10 +25,11 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-  "requests",
+  "httpx",
   "fastapi",
   "aio_pika",
   "uvicorn[standard]",
+  "loguru",
 ]
 
 [project.urls]

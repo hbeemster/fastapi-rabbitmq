@@ -16,6 +16,9 @@
 pip install fastapi-rabbitmq
 ```
 
+## Inspirations
+[FastAPI Best Practices](https://github.com/zhanymkanov/fastapi-best-practices)
+
 ## License
 
 `fastapi-rabbitmq` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.

@@ -3,6 +3,7 @@ import asyncio
 import aio_pika
 
 from fastapi_rabbitmq.constants import ROUTING_KEY, RABBITMQ_URL
+from fastapi_rabbitmq.logger import logger
 from fastapi_rabbitmq.messages import Task
 
 
@@ -29,13 +30,12 @@ def send(task: Task):
         loop = None
 
     if loop and loop.is_running():
-        print('Async event loop already running. Adding coroutine to the event loop.')
+        logger.debug("Async event loop already running. Adding coroutine to the event loop.")
         tsk = loop.create_task(main(task))
         # ^-- https://docs.python.org/3/library/asyncio-task.html#task-object
         # Optionally, a callback function can be executed when the coroutine completes
-        tsk.add_done_callback(
-            lambda t: print(f'Task done with result={t.result()}  << return val of main()'))
+        tsk.add_done_callback(lambda t: logger.debug(f"Task done with result={t.result()}  << return val of main()"))
     else:
-        print('Starting new event loop')
+        logger.debug("Starting new event loop")
         result = asyncio.run(main())
     # asyncio.run(main(task))
