@@ -13,8 +13,10 @@ from fastapi_rabbitmq.producer import send
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     loop = asyncio.get_event_loop()
+
     connection = await aio_pika.connect(RABBITMQ_URL, loop=loop)
     channel = await connection.channel()
+    await channel.set_qos(prefetch_count=1)
     queue_name, queue = await init_queue(channel)
     app.queues = {queue_name: queue}
 
