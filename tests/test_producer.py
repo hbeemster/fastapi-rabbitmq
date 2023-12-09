@@ -1,50 +1,50 @@
 import logging
 from time import sleep
-from typing import List, Set
+from typing import List
 
 from _pytest.logging import LogCaptureFixture
 
 from fastapi_rabbitmq.logger import logger
-from fastapi_rabbitmq.messages import Task
+from fastapi_rabbitmq.messages import Job
 
 
 # ------------------------------------------------------------------------
-def send_tasks(client, process_url:str, tasks: List[Task]) -> None:
-    """"""
-    for task_ in tasks:
-        client.post(process_url, data=task_.model_dump_json())
+def send_jobs(client, process_url: str, jobs: List[Job]) -> None:
+    """Send all jobs to the rabbitmq."""
+    for job in jobs:
+        client.post(process_url, data=job.model_dump_json())
 
 
 # ------------------------------------------------------------------------
-def wait_until_ready(caplog: LogCaptureFixture, tasks: List[Task]) -> None:
-    """"""
-    match = {f"Task with correlation_id: {task_.correlation_id} done!!!" for task_ in tasks}
+def wait_until_ready(caplog: LogCaptureFixture, jobs: List[Job]) -> None:
+    """Watch the log for the correlation_ids."""
+    match = {f"Job with correlation_id: {job.correlation_id} done!!!" for job in jobs}
     while not set(caplog.messages).issuperset(match):
         logger.debug("waiting...")
         sleep(1)
 
 
 # ------------------------------------------------------------------------
-def test_send_single_task(client_with_one_consumer, task, process_url, caplog):
+def test_send_single_job(client_with_one_consumer, job, process_url, caplog):
     caplog.set_level(logging.DEBUG)
 
-    send_tasks(client_with_one_consumer, process_url, [task])
-    wait_until_ready(caplog, [task])
+    send_jobs(client_with_one_consumer, process_url, jobs=[job])
+    wait_until_ready(caplog, [job])
 
 
 # ------------------------------------------------------------------------
-def test_send_multiple_tasks_with_one_consumer(client_with_one_consumer, process_url, tasks, caplog):
-    """In this scenario the tasks are processed sequentially."""
+def test_send_multiple_jobs_with_one_consumer(client_with_one_consumer, process_url, jobs, caplog):
+    """In this scenario the jobs are processed sequentially."""
     caplog.set_level(logging.DEBUG)
 
-    send_tasks(client_with_one_consumer, process_url, tasks)
-    wait_until_ready(caplog, tasks)
+    send_jobs(client_with_one_consumer, process_url, jobs)
+    wait_until_ready(caplog, jobs)
 
 
 # ------------------------------------------------------------------------
-def test_send_multiple_tasks_with_three_consumers(client_with_three_consumers, process_url, tasks, caplog):
-    """In this scenario the tasks are processed concurrently."""
+def test_send_multiple_jobs_with_three_consumers(client_with_three_consumers, process_url, jobs, caplog):
+    """In this scenario the jobs are processed concurrently."""
     caplog.set_level(logging.DEBUG)
 
-    send_tasks(client_with_three_consumers, process_url, tasks)
-    wait_until_ready(caplog, tasks)
+    send_jobs(client_with_three_consumers, process_url, jobs)
+    wait_until_ready(caplog, jobs)

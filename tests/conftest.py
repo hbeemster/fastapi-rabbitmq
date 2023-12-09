@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 
 from fastapi_rabbitmq.config import config
 from fastapi_rabbitmq.constants import PROCESS_URL
-from fastapi_rabbitmq.messages import Task
+from fastapi_rabbitmq.messages import Job
 
 
 # ------------------------------------------------------------------------
@@ -28,21 +28,21 @@ def client_with_three_consumers():
 
 # ------------------------------------------------------------------------
 @pytest.fixture
-def task():
+def job():
     """"""
     data = {"name": "TADA", "duration": 3.0}
-    return Task(**data)
+    return Job(**data)
 
 # ------------------------------------------------------------------------
 @pytest.fixture
-def tasks(task):
+def jobs(job):
     """"""
-    tasks = []
+    jobs = []
     for duration in range(1, 4):
         data = {"name": "TADA", "duration": duration}
-        task = Task(**data)
-        tasks.append(task)
-    return tasks
+        job = Job(**data)
+        jobs.append(job)
+    return jobs
 
 # ------------------------------------------------------------------------
 @pytest.fixture

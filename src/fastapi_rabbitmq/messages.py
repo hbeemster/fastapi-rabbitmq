@@ -11,13 +11,7 @@ class Response(BaseModel):
 
 
 # ------------------------------------------------------------------------
-class ResponseTaskCount(BaseModel):
-    success: bool
-    count: int
-
-
-# ------------------------------------------------------------------------
-class Task(BaseModel):
+class Job(BaseModel):
     name: str
     duration: float | None = 0.1
     correlation_id: str | None = None

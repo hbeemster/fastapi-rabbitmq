@@ -6,10 +6,13 @@ from asyncio import sleep
 import aio_pika
 
 from fastapi_rabbitmq.logger import logger
-from fastapi_rabbitmq.messages import Task
+from fastapi_rabbitmq.messages import Job
 
 
-class TaskConsumer:
+# ------------------------------------------------------------------------
+# JobConsumer
+# ------------------------------------------------------------------------
+class JobConsumer:
     """The TaskConsumer class takes care of processing the Tasks."""
 
     # ------------------------------------------------------------------------
@@ -17,7 +20,6 @@ class TaskConsumer:
         self,
         *,
         loop: asyncio.AbstractEventLoop,
-
         rabbitmq_url: str,
         queue_name: str,
     ) -> None:
@@ -29,13 +31,13 @@ class TaskConsumer:
     # ------------------------------------------------------------------------
     async def process_message(self, message: aio_pika.IncomingMessage):
         message_ = json.loads(message.body.decode("utf-8"))
+        job = Job(**message_)
 
-        task = Task(**message_)
         logger.info(75 * "=")
         logger.info(message_)
         logger.info("start crunching...")
-        await sleep(task.duration)
-        logger.info(f"Task with correlation_id: {task.correlation_id} done!!!")
+        await sleep(job.duration)
+        logger.info(f"Job with correlation_id: {job.correlation_id} done!!!")
         logger.info(75 * "=")
         await message.ack()
 
@@ -53,12 +55,24 @@ class TaskConsumer:
         await self.connection.close()
 
 
-class TaskConsumerContextManager:
-    """Context manager for the task consumers."""
+# ------------------------------------------------------------------------
+# JobConsumerContextManager
+# ------------------------------------------------------------------------
+class JobConsumerContextManager:
+    """This context manager lets you create one or more TaskConsumers.
+
+    Cleanup is done when the context manager exits.
+    """
 
     # ------------------------------------------------------------------------
-    def __init__(self,*,  number_of_consumers: int, loop: asyncio.AbstractEventLoop, rabbitmq_url: str,
-        queue_name: str,):
+    def __init__(
+        self,
+        *,
+        number_of_consumers: int,
+        loop: asyncio.AbstractEventLoop,
+        rabbitmq_url: str,
+        queue_name: str,
+    ):
         self.number_of_consumers = number_of_consumers
         self.loop = loop
         self.rabbitmq_url = rabbitmq_url
@@ -68,7 +82,7 @@ class TaskConsumerContextManager:
     # ------------------------------------------------------------------------
     async def __aenter__(self):
         for _ in range(self.number_of_consumers):
-            consumer = TaskConsumer(loop=self.loop, rabbitmq_url=self.rabbitmq_url, queue_name=self.queue_name)
+            consumer = JobConsumer(loop=self.loop, rabbitmq_url=self.rabbitmq_url, queue_name=self.queue_name)
             self.consumers.append(consumer)
             await consumer.start_consumer()
         return self

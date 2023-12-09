@@ -4,10 +4,10 @@ import aio_pika
 
 from fastapi_rabbitmq.constants import ROUTING_KEY, RABBITMQ_URL
 from fastapi_rabbitmq.logger import logger
-from fastapi_rabbitmq.messages import Task
+from fastapi_rabbitmq.messages import Job
 
 
-async def main(task: Task) -> None:
+async def main(task: Job) -> None:
     connection = await aio_pika.connect_robust(
         RABBITMQ_URL,
     )
@@ -23,7 +23,7 @@ async def main(task: Task) -> None:
         )
 
 
-def send(task: Task):
+def send(task: Job):
     try:
         loop = asyncio.get_running_loop()
     except RuntimeError:  # 'RuntimeError: There is no current event loop...'
