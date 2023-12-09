@@ -30,6 +30,7 @@ dependencies = [
   "aio_pika",
   "uvicorn[standard]",
   "loguru",
+  "pydantic-settings",
 ]
 
 [project.urls]

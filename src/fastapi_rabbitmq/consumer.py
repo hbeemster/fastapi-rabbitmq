@@ -1,35 +1,79 @@
 # from controllers import new_log
+import asyncio
 import json
 from asyncio import sleep
 
 import aio_pika
-from aio_pika.abc import AbstractChannel
 
-from fastapi_rabbitmq.constants import QUEUE_NAME
 from fastapi_rabbitmq.logger import logger
 from fastapi_rabbitmq.messages import Task
 
 
-async def init_queue(channel: AbstractChannel):
-    queue = await channel.declare_queue(QUEUE_NAME)
-    await queue.consume(on_message)
-    return QUEUE_NAME, queue
+class TaskConsumer:
+    """The TaskConsumer class takes care of processing the Tasks."""
+
+    # ------------------------------------------------------------------------
+    def __init__(
+        self,
+        *,
+        loop: asyncio.AbstractEventLoop,
+
+        rabbitmq_url: str,
+        queue_name: str,
+    ) -> None:
+        self.loop = loop
+        self.rabbitmq_url = rabbitmq_url
+        self.queue_name = queue_name
+        self.connection = None
+
+    # ------------------------------------------------------------------------
+    async def process_message(self, message: aio_pika.IncomingMessage):
+        message_ = json.loads(message.body.decode("utf-8"))
+
+        task = Task(**message_)
+        logger.info(75 * "=")
+        logger.info(message_)
+        logger.info("start crunching...")
+        await sleep(task.duration)
+        logger.info(f"Task with correlation_id: {task.correlation_id} done!!!")
+        logger.info(75 * "=")
+        await message.ack()
+
+    # ------------------------------------------------------------------------
+    async def start_consumer(self) -> None:
+        logger.debug(f"Start consumer: {self}")
+        self.connection = await aio_pika.connect(self.rabbitmq_url, loop=self.loop)
+        channel = await self.connection.channel()
+        await channel.set_qos(prefetch_count=1)
+        queue = await channel.declare_queue(self.queue_name)
+        await queue.consume(self.process_message)
+
+    # ------------------------------------------------------------------------
+    async def stop_consumer(self) -> None:
+        await self.connection.close()
 
 
-async def on_message(message: aio_pika.IncomingMessage):
-    # tracker = ast.literal_eval(message.body.decode("utf-8"))
-    message_ = json.loads(message.body.decode("utf-8"))
+class TaskConsumerContextManager:
+    """Context manager for the task consumers."""
 
-    task = Task(**message_)
-    logger.info(75 * "=")
-    logger.info(message_)
-    logger.info("start crunching...")
-    await sleep(task.duration)
-    logger.info(f"Task with correlation_id: {task.correlation_id} done!!!")
-    logger.info(75 * "=")
-    await message.ack()
+    # ------------------------------------------------------------------------
+    def __init__(self,*,  number_of_consumers: int, loop: asyncio.AbstractEventLoop, rabbitmq_url: str,
+        queue_name: str,):
+        self.number_of_consumers = number_of_consumers
+        self.loop = loop
+        self.rabbitmq_url = rabbitmq_url
+        self.queue_name = queue_name
+        self.consumers = []
 
-    #
-    # new_log(tracker["ip_address"], tracker["request_url"], tracker["request_port"],
-    #                     tracker["request_path"], tracker["request_method"],
-    #                     tracker["browser_type"],tracker["request_time"], tracker["service_name"])
+    # ------------------------------------------------------------------------
+    async def __aenter__(self):
+        for _ in range(self.number_of_consumers):
+            consumer = TaskConsumer(loop=self.loop, rabbitmq_url=self.rabbitmq_url, queue_name=self.queue_name)
+            self.consumers.append(consumer)
+            await consumer.start_consumer()
+        return self
+
+    # ------------------------------------------------------------------------
+    async def __aexit__(self, exc_type, exc, tb):
+        for consumer in self.consumers:
+            consumer.stop_consumer()
