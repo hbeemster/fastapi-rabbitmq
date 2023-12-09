@@ -76,4 +76,4 @@ class TaskConsumerContextManager:
     # ------------------------------------------------------------------------
     async def __aexit__(self, exc_type, exc, tb):
         for consumer in self.consumers:
-            consumer.stop_consumer()
+            await consumer.stop_consumer()

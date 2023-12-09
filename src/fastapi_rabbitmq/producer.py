@@ -32,10 +32,9 @@ def send(task: Task):
     if loop and loop.is_running():
         logger.debug("Async event loop already running. Adding coroutine to the event loop.")
         tsk = loop.create_task(main(task))
-        # ^-- https://docs.python.org/3/library/asyncio-task.html#task-object
         # Optionally, a callback function can be executed when the coroutine completes
         tsk.add_done_callback(lambda t: logger.debug(f"Task done with result={t.result()}  << return val of main()"))
     else:
         logger.debug("Starting new event loop")
-        result = asyncio.run(main())
-    # asyncio.run(main(task))
+        asyncio.run(main(task))
+

@@ -2,11 +2,12 @@ import pytest
 from fastapi.testclient import TestClient
 
 from fastapi_rabbitmq.config import config
+from fastapi_rabbitmq.constants import PROCESS_URL
 from fastapi_rabbitmq.messages import Task
 
 
 # ------------------------------------------------------------------------
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def client_with_one_consumer():
     """This fixture will start the app."""
     from fastapi_rabbitmq.app import app
@@ -15,7 +16,7 @@ def client_with_one_consumer():
         yield client
 
 # ------------------------------------------------------------------------
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def client_with_three_consumers():
     """This fixture will start the app."""
     from fastapi_rabbitmq.app import app
@@ -27,7 +28,14 @@ def client_with_three_consumers():
 
 # ------------------------------------------------------------------------
 @pytest.fixture
-def tasks():
+def task():
+    """"""
+    data = {"name": "TADA", "duration": 3.0}
+    return Task(**data)
+
+# ------------------------------------------------------------------------
+@pytest.fixture
+def tasks(task):
     """"""
     tasks = []
     for duration in range(1, 4):
@@ -35,3 +43,9 @@ def tasks():
         task = Task(**data)
         tasks.append(task)
     return tasks
+
+# ------------------------------------------------------------------------
+@pytest.fixture
+def process_url():
+    """"""
+    return PROCESS_URL
