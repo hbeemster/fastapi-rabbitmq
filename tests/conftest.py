@@ -15,6 +15,7 @@ def client_with_one_consumer():
     with TestClient(app) as client:
         yield client
 
+
 # ------------------------------------------------------------------------
 @pytest.fixture(scope="function")
 def client_with_three_consumers():
@@ -30,19 +31,21 @@ def client_with_three_consumers():
 @pytest.fixture
 def job():
     """"""
-    data = {"name": "TADA", "duration": 3.0}
+    data = {"name": "Job-1", "duration": 1.0}
     return Job(**data)
+
 
 # ------------------------------------------------------------------------
 @pytest.fixture
-def jobs(job):
+def jobs():
     """"""
     jobs = []
-    for duration in range(1, 4):
-        data = {"name": "TADA", "duration": duration}
+    for index in range(1, 4):
+        data = {"name": f"Job-{index}", "duration": index}
         job = Job(**data)
         jobs.append(job)
     return jobs
+
 
 # ------------------------------------------------------------------------
 @pytest.fixture
