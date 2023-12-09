@@ -1,3 +1,4 @@
+"""Test module for the API."""
 import logging
 from time import sleep
 from typing import List
