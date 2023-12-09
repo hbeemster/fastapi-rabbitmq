@@ -15,9 +15,12 @@ from fastapi_rabbitmq.producer import send
 async def lifespan(app: FastAPI):
     loop = asyncio.get_event_loop()
 
-    # add as many JobConsumers as needed
+    # start as many JobConsumers as needed
     async with JobConsumerContextManager(
-        number_of_consumers=config.number_of_consumers, loop=loop, rabbitmq_url=RABBITMQ_URL, queue_name=QUEUE_NAME
+        number_of_consumers=config.number_of_consumers,
+        loop=loop,
+        rabbitmq_url=RABBITMQ_URL,
+        queue_name=QUEUE_NAME,
     ) as _:
         yield
 
@@ -29,16 +32,22 @@ app = FastAPI(lifespan=lifespan)
 
 
 # ------------------------------------------------------------------------
+#  API
+# ------------------------------------------------------------------------
 @app.post("/process")
-async def process(task: Job):
-    send(task)
-    return Response(success=True, message=f"Started {task.name}")
+async def process(job: Job):
+    """"""
+    await send(job)
+    return Response(success=True, message=f"Started {job.name}")
 
 
+# ------------------------------------------------------------------------
+# Main
 # ------------------------------------------------------------------------
 def main():
     """Start app."""
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
 
