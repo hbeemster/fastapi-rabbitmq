@@ -5,7 +5,7 @@ from fastapi_rabbitmq.logger import logger
 
 
 def create_task_for_event_loop(coro, *args, **kwargs):
-    """This function will create task for the event loop for asyncio coroutines.
+    """This function will create task on the event loop for the given asyncio coroutine.
 
     It wil try to get the running event loop, if there is no running event loop it will create a new one.
     After that it will create a asyncio task for the given coroutine and any arguments passed to the coroutine.
